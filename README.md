@@ -59,7 +59,7 @@ cvd_visualizer_v2/
 ## 🚀 Come Avviare
 
 ```bash
-streamlit run main_v2.py
+streamlit run main.py
 ```
 
 ---
@@ -433,25 +433,6 @@ Stesse dipendenze di V1.
 
 Per domande o bug, riferirsi alla documentazione V1 (teoria identica).
 
-**Versione**: 2.1 (Professional Edition)
+**Versione**: 2.1
 **Data**: 2025-11-22
 **Autore**: MangoLabs
-
----
-
-## 📋 Changelog
-
-### V2.1 (2025-11-22)
-- ✅ Ripristinato CVD candlestick trasparente (opacity 0.35)
-- ✅ Aggiunti ratio numbers sopra candele prezzo
-- ✅ Aggiunti signal badges sotto candele prezzo
-- ✅ Implementate threshold bands dinamiche nel pannello efficiency
-- ✅ Aggiunta legenda segnali completa nella sidebar
-- ✅ **Auto-resume sempre attivo** (non più limitato a 3 minuti)
-- ✅ Mantenuta retrocompatibilità totale con V2.0
-
-### V2.0 (2025-01-22)
-- Versione iniziale con 4 pannelli
-- Volume Profile, KPI dashboard, auto-resume
-- 5 CSV files salvati per sessione
-- Alert flash e zone coloring
