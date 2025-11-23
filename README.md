@@ -1,27 +1,60 @@
-# CVD Visualizer 🚀
+# CVD Visualizer V2 🚀
 
 Real-time Bitcoin order flow analysis with Cumulative Volume Delta (CVD) and mean-reversion signals.
 
 ## What it does
 
 Connects to Hyperliquid WebSocket and visualizes:
-- **Price vs CVD**: Candlestick chart with transparent CVD overlay
+- **Price vs CVD**: Candlestick chart with transparent CVD overlay (independent Y-axes)
 - **Volume Profile**: Buy/sell volume breakdown per candle
 - **Efficiency Ratio**: Price movement vs CVD movement (normalized)
 - **Cumulative Signals**: Mean-reversion indicator for oversold/overbought conditions
 
+## Architecture
+
+- **Backend**: FastAPI (Python) - WebSocket connection to Hyperliquid, data processing, SSE streaming
+- **Frontend**: Vanilla JS + Plotly.js - High-performance client-side rendering with independent axes
+- **Real-time**: Server-Sent Events (SSE) for push updates every 5 seconds
+- **Memory**: Sliding window (24h data retention, automatic cleanup)
+
 ## Quick Start
 
+### Local Development
+
 ```bash
-pip install streamlit plotly pandas numpy websockets
-streamlit run main.py
+# Install dependencies
+pip install -r requirements.txt
+
+# Run backend
+uvicorn backend.main:app --host 0.0.0.0 --port 8000
+
+# Open browser
+http://localhost:8000
 ```
 
-The app will:
-1. Connect to Hyperliquid WebSocket (BTC perpetual)
-2. Start collecting trades in real-time
-3. Update dashboard every 5 seconds
-4. Auto-save session data to `data/session_[timestamp]/`
+### Deploy to Railway
+
+1. **Push to GitHub**:
+```bash
+git add .
+git commit -m "Deploy CVD Visualizer v2"
+git push origin main
+```
+
+2. **Connect GitHub repo to Railway**
+3. Railway auto-detects `Procfile` and deploys
+4. Generate public domain in Railway dashboard
+
+## Features
+
+- ✅ **Real-time data**: WebSocket connection to Hyperliquid (BTC perpetual futures)
+- ✅ **Sliding window**: 24-hour data retention with automatic cleanup every 10 minutes
+- ✅ **Independent axes**: Price and CVD can be zoomed/panned separately
+- ✅ **Server-Sent Events**: Efficient real-time updates every 5 seconds
+- ✅ **Dark theme**: Professional UI with responsive design
+- ✅ **Mean-reversion signals**: Cumulative signal with contrarian logic
+- ✅ **Zero persistence**: Fully in-memory for Railway ephemeral storage
+- ✅ **Fixed memory**: ~5MB footprint with sliding window cleanup
 
 ## How to read the signals
 
@@ -55,45 +88,66 @@ The cumulative signal measures **market exhaustion**, not direction to follow.
 
 **Philosophy**: The more the market moves in one direction (signal accumulation), the higher the probability of reversal.
 
-## Interactive Controls
-
-**Sidebar sliders**:
-- **RATIO_STRONG** (1.0-3.0, default 1.5): Threshold for ±3 signals
-- **RATIO_WEAK** (0.1-1.0, default 0.5): Threshold for ±1 signals
-
-Adjust these to tune signal sensitivity. Changes recalculate signals in real-time.
-
-## Session Management
-
-The app **always auto-resumes** the latest session on restart:
-- ✅ Loads all previous trades from `trades_raw.csv`
-- ✅ Rebuilds charts with historical data
-- ✅ Continues saving to the same folder
-
-**To start fresh**: Delete or rename folders in `data/` that start with "session_"
-
-## Data Files
-
-Each session saves 5 CSV files in `data/session_[timestamp]/`:
-1. `trades_raw.csv`: All raw trades (timestamp, price, volume, side)
-2. `candles_3m.csv`: OHLC candles (3-minute intervals)
-3. `cvd_timeseries.csv`: CVD OHLC per candle
-4. `signals.csv`: Efficiency ratio and signals per candle
-5. `kpi_snapshots.csv`: KPI history (volume, trades/min, CVD net, last signal)
-
 ## Technical Details
 
-- **Data source**: Hyperliquid WebSocket (`wss://api.hyperliq.xyz/ws`)
+- **Data source**: Hyperliquid WebSocket (`wss://api.hyperliquid.xyz/ws`)
 - **Asset**: BTC perpetual futures
 - **Candle interval**: 3 minutes
 - **Update frequency**: 5 seconds
-- **Framework**: Streamlit + Plotly
-- **Session persistence**: Auto-resume with CSV storage
+- **Data retention**: Sliding window (last 24 hours, ~480 candles)
+- **Memory management**: Automatic cleanup every 10 minutes
+- **Backend**: FastAPI + Uvicorn
+- **Frontend**: HTML + Plotly.js + EventSource (SSE)
+- **Chart features**: Independent Y-axis scaling for Price and CVD
+
+## API Endpoints
+
+- `GET /`: Serves frontend HTML
+- `GET /api/data`: JSON snapshot of current data
+- `GET /api/stream`: Server-Sent Events (SSE) for real-time updates
+- `GET /api/health`: Health check
+- `GET /static/*`: Static files (CSS, JS)
+
+## Project Structure
+
+```
+cvd_visualizer_v2/
+├── backend/
+│   ├── __init__.py
+│   ├── main.py           # FastAPI app + WebSocket logic + SSE streaming
+│   └── cvd_engine.py     # CVD calculation logic
+├── frontend/
+│   ├── index.html        # Single-page app (sidebar + chart)
+│   ├── app.js            # Plotly rendering + SSE client + independent axes
+│   └── styles.css        # Dark theme styling
+├── Procfile              # Railway: uvicorn backend.main:app
+├── requirements.txt      # Python dependencies
+├── .gitignore            # Git ignore (Python, IDE, OS files)
+└── README.md
+```
+
+## Railway Deployment Notes
+
+- **Ephemeral storage**: Data is not persisted across restarts (in-memory only)
+- **Free tier**: 500h/month free (~20 days 24/7)
+- **Cost**: ~$5/month for hobby plan
+- **Performance**: Client-side chart rendering (no Python overhead)
+- **Memory usage**: Fixed footprint (~5MB) with sliding window cleanup
+- **Auto-restart**: Railway auto-restarts on crashes (WebSocket reconnects automatically)
+
+## Analytics
+
+The app includes Google Analytics tracking (optional):
+- Page views
+- Session duration
+- Traffic sources
+
+To enable: Replace `G-XXXXXXXXXX` in `frontend/index.html:15` with your Google Analytics tracking ID.
 
 ## Example Use Cases
 
 ### 1. Real-time Mean-Reversion Trading
-Monitor cumulative signal in panel 4. When it reaches extremes (>+4 or <-4), take contrarian position:
+Monitor cumulative signal. When it reaches extremes (>+4 or <-4), take contrarian position:
 - Cumulative < -4 + high sell volume → **BUY** (oversold)
 - Cumulative > +4 + high buy volume → **SELL** (overbought)
 
@@ -107,23 +161,21 @@ Use volume profile to confirm signals:
 - Heavy sell volume + cumulative < -4 → strong oversold condition
 - Heavy buy volume + cumulative > +4 → strong overbought condition
 
-## Deploy
+---
 
-For Railway.app deployment, the `Procfile` is already configured:
-```
-web: streamlit run main.py --server.port=$PORT --server.address=0.0.0.0
-```
+## License
 
-Just connect your GitHub repo to Railway and deploy.
-
-## Notes
-
-- **Filesystem**: Railway uses ephemeral storage. Session data is lost on restart (acceptable for a playground).
-- **Free tier**: Railway offers 500h/month free (~20 days 24/7).
-- **Cost**: ~$5/month for persistent hobby plan.
+MIT License - See [LICENSE](LICENSE) file
 
 ---
 
-**Version**: 2.1
-**Author**: MangoLabs
-**Date**: 2025-11-22
+## Contact
+
+- **GitHub**: [@Federico-Anastasi](https://github.com/Federico-Anastasi)
+- **Twitter**: [@FedeAnastasi](https://twitter.com/FedeAnastasi)
+- **Email**: federico_anastasi@outlook.com
+
+---
+
+**Version**: 3.0 (FastAPI + HTML/JS + Independent Axes + Sliding Window)
+**Date**: 2025-11-23

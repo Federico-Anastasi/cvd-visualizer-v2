@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CVD Visualizer - Real-time Bitcoin Order Flow</title>
+
+    <!-- Plotly.js -->
+    <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+
+    <!-- Styles -->
+    <link rel="stylesheet" href="/static/styles.css">
+
+    <!-- Google Analytics (replace G-XXXXXXXXXX with your tracking ID) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'G-XXXXXXXXXX');
+    </script>
+</head>
+<body>
+    <div class="container">
+        <!-- Sidebar -->
+        <aside id="sidebar">
+            <h1>📊 CVD Visualizer</h1>
+            <p class="subtitle">Real-time Bitcoin Order Flow</p>
+
+            <!-- Session Status -->
+            <div id="session-status" class="status-box">
+                <div class="status-indicator">
+                    <span class="dot" id="status-dot"></span>
+                    <span id="status-text">Connecting...</span>
+                </div>
+            </div>
+
+            <hr>
+
+            <!-- KPI Section -->
+            <div class="kpi-section">
+                <h2>📈 Metrics</h2>
+
+                <div class="kpi-item">
+                    <span class="kpi-label">Volume 24h</span>
+                    <span class="kpi-value" id="kpi-volume">-</span>
+                    <span class="kpi-unit">BTC</span>
+                </div>
+
+                <div class="kpi-item">
+                    <span class="kpi-label">Trades/min</span>
+                    <span class="kpi-value" id="kpi-trades-min">-</span>
+                </div>
+
+                <div class="kpi-item">
+                    <span class="kpi-label">CVD Net</span>
+                    <span class="kpi-value" id="kpi-cvd-net">-</span>
+                </div>
+
+                <div class="kpi-item">
+                    <span class="kpi-label">Last Signal</span>
+                    <span class="kpi-value signal-badge" id="kpi-last-signal">-</span>
+                </div>
+
+                <div class="kpi-item">
+                    <span class="kpi-label">Uptime</span>
+                    <span class="kpi-value" id="kpi-uptime">-</span>
+                </div>
+            </div>
+
+            <hr>
+
+            <!-- Signal Legend -->
+            <div class="legend-section">
+                <h2>📖 Signal Legend</h2>
+
+                <div class="legend-item">
+                    <span class="badge badge-strong-bull">+3</span>
+                    <span class="legend-text">Strong bullish move</span>
+                </div>
+
+                <div class="legend-item">
+                    <span class="badge badge-divergence-bull">+2</span>
+                    <span class="legend-text">Divergence (reversal)</span>
+                </div>
+
+                <div class="legend-item">
+                    <span class="badge badge-absorption-bull">+1</span>
+                    <span class="legend-text">Absorption (ranging)</span>
+                </div>
+
+                <div class="legend-item">
+                    <span class="badge badge-neutral">0</span>
+                    <span class="legend-text">Neutral</span>
+                </div>
+
+                <div class="legend-item">
+                    <span class="badge badge-absorption-bear">-1</span>
+                    <span class="legend-text">Absorption (ranging)</span>
+                </div>
+
+                <div class="legend-item">
+                    <span class="badge badge-divergence-bear">-2</span>
+                    <span class="legend-text">Divergence (reversal)</span>
+                </div>
+
+                <div class="legend-item">
+                    <span class="badge badge-strong-bear">-3</span>
+                    <span class="legend-text">Strong bearish move</span>
+                </div>
+
+                <p class="legend-note">
+                    <strong>Cumulative Signal:</strong> Sum of signals over time.
+                    Extreme values (>+4 or <-4) indicate potential reversals.
+                </p>
+            </div>
+
+            <hr>
+
+            <!-- Info -->
+            <div class="info-section">
+                <p class="info-text">
+                    Live data from <strong>Hyperliquid</strong><br>
+                    BTC perpetual futures<br>
+                    Updates every 5 seconds
+                </p>
+                <p class="info-hint">
+                    💡 Drag to pan, scroll to zoom<br>
+                    Double-click to reset view
+                </p>
+            </div>
+        </aside>
+
+        <!-- Main Chart Area -->
+        <main>
+            <div id="chart-container">
+                <div id="chart"></div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Footer -->
+    <footer>
+        <p>
+            Built by <a href="https://twitter.com/FedeAnastasi" target="_blank">@FedeAnastasi</a>
+            | <a href="https://github.com/Federico-Anastasi/cvd-visualizer-v2" target="_blank">GitHub</a>
+        </p>
+    </footer>
+
+    <!-- App Logic -->
+    <script src="/static/app.js"></script>
+</body>
+</html>
