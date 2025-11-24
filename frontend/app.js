@@ -96,9 +96,13 @@ function cacheDOMElements() {
         debugTimeframe: document.getElementById('debug-timeframe'),
         debugLastUpdate: document.getElementById('debug-last-update'),
         chartContainer: document.getElementById('main-chart'),
-        resetViewBtn: document.getElementById('reset-view')
+        resetViewBtn: document.getElementById('reset-view'),
+        volumeSparkline: document.getElementById('volume-sparkline')
     };
 }
+
+// Volume history for sparkline (keep last 20 points)
+State.volumeHistory = [];
 
 // ────────────────────────────────────────────────────────────
 // ECHARTS INITIALIZATION
@@ -656,13 +660,51 @@ function updateStatus(status) {
     }
 }
 
+function drawVolumeSparkline() {
+    const canvas = State.elements.volumeSparkline;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    const width = canvas.width;
+    const height = canvas.height;
+
+    // Clear canvas
+    ctx.clearRect(0, 0, width, height);
+
+    if (State.volumeHistory.length < 2) return;
+
+    // Calculate min/max for scaling
+    const values = State.volumeHistory;
+    const min = Math.min(...values);
+    const max = Math.max(...values);
+    const range = max - min || 1;
+
+    // Draw line
+    ctx.strokeStyle = '#00f0ff';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+
+    values.forEach((val, i) => {
+        const x = (i / (values.length - 1)) * width;
+        const y = height - ((val - min) / range) * height;
+        if (i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+    });
+
+    ctx.stroke();
+}
+
 function updateKPIs(data) {
     if (!data.kpi) return;
     const kpi = data.kpi;
     State.elements.kpiVolume.textContent = kpi.volume_24h.toFixed(2);
     State.elements.kpiTradesMin.textContent = kpi.trades_per_min.toFixed(1);
     State.elements.kpiCvdNet.textContent = kpi.cvd_net.toFixed(2);
-    State.elements.kpiCvdNet.className = 'text-lg font-semibold font-mono ' + (kpi.cvd_net > 0 ? 'text-neon-cyan' : 'text-neon-red');
+    State.elements.kpiCvdNet.className = 'text-xl font-bold font-mono ' + (kpi.cvd_net > 0 ? 'text-neon-cyan' : 'text-neon-red');
+
+    // Update volume history for sparkline
+    State.volumeHistory.push(kpi.volume_24h);
+    if (State.volumeHistory.length > 20) State.volumeHistory.shift();
+    drawVolumeSparkline();
 
     const sig = kpi.last_signal;
     let text = "NEUTRAL", color = "text-gray-400", border = "border-l-void-500";
@@ -671,8 +713,9 @@ function updateKPIs(data) {
     else if (Math.abs(sig) == 1) { text = "ABSORPTION"; color = sig > 0 ? 'text-neon-cyan' : 'text-neon-red'; border = sig > 0 ? 'border-l-neon-cyan' : 'border-l-neon-red'; }
 
     State.elements.kpiLastSignal.textContent = `${text} (${sig})`;
-    State.elements.kpiLastSignal.className = 'text-lg font-semibold font-mono ' + color;
-    State.elements.lastSignalCard.className = 'bg-void-800 border border-void-600 border-l-2 rounded-md p-3 ' + border;
+    State.elements.kpiLastSignal.className = 'text-xl font-bold font-mono ' + color;
+    // Preserve gradient border structure
+    State.elements.lastSignalCard.className = 'bg-void-800 border border-void-600 rounded-md p-3 relative overflow-hidden';
 
     const h = Math.floor(kpi.uptime_sec / 3600);
     const m = Math.floor((kpi.uptime_sec % 3600) / 60);

@@ -155,31 +155,39 @@
         </header>
 
         <!-- ════════════════ SIDEBAR ════════════════ -->
-        <aside class="bg-void-900 border-r border-void-600 flex flex-col gap-6 p-4 overflow-y-auto">
+        <aside class="bg-void-900/95 backdrop-blur-sm border-r border-void-600 flex flex-col gap-6 p-4 overflow-y-auto">
 
             <!-- Market Data KPIs -->
             <div>
                 <h2 class="text-xs uppercase tracking-widest text-gray-500 font-bold mb-3">Market Data</h2>
                 <div class="grid gap-3">
                     <!-- 24h Volume -->
-                    <div class="bg-void-800 border border-void-600 border-l-2 border-l-void-500 rounded-md p-3">
-                        <div class="text-xs text-gray-400 mb-1">24h Volume</div>
-                        <div class="text-lg font-semibold font-mono text-gray-100">
-                            <span id="kpi-volume">--</span>
-                            <span class="text-xs text-gray-500 ml-1">BTC</span>
+                    <div class="bg-void-800 border border-void-600 rounded-md p-3 relative overflow-hidden">
+                        <div class="absolute left-0 top-0 bottom-0 w-0.5 bg-gradient-to-b from-neon-cyan to-purple-500"></div>
+                        <div class="flex justify-between items-start">
+                            <div class="flex-1">
+                                <div class="text-xs text-gray-400 mb-1 font-sans">24h Volume</div>
+                                <div class="text-xl font-bold font-mono text-gray-100">
+                                    <span id="kpi-volume">--</span>
+                                    <span class="text-xs text-gray-500 ml-1 font-sans">BTC</span>
+                                </div>
+                            </div>
+                            <canvas id="volume-sparkline" width="60" height="30" class="opacity-50"></canvas>
                         </div>
                     </div>
 
                     <!-- CVD Net -->
-                    <div class="bg-void-800 border border-void-600 border-l-2 border-l-void-500 rounded-md p-3">
-                        <div class="text-xs text-gray-400 mb-1">CVD Net</div>
-                        <div id="kpi-cvd-net" class="text-lg font-semibold font-mono">--</div>
+                    <div class="bg-void-800 border border-void-600 rounded-md p-3 relative overflow-hidden">
+                        <div class="absolute left-0 top-0 bottom-0 w-0.5 bg-gradient-to-b from-neon-cyan to-purple-500"></div>
+                        <div class="text-xs text-gray-400 mb-1 font-sans">CVD Net</div>
+                        <div id="kpi-cvd-net" class="text-xl font-bold font-mono">--</div>
                     </div>
 
                     <!-- Trades/Min -->
-                    <div class="bg-void-800 border border-void-600 border-l-2 border-l-void-500 rounded-md p-3">
-                        <div class="text-xs text-gray-400 mb-1">Trades/Min</div>
-                        <div id="kpi-trades-min" class="text-lg font-semibold font-mono">--</div>
+                    <div class="bg-void-800 border border-void-600 rounded-md p-3 relative overflow-hidden">
+                        <div class="absolute left-0 top-0 bottom-0 w-0.5 bg-gradient-to-b from-neon-cyan to-purple-500"></div>
+                        <div class="text-xs text-gray-400 mb-1 font-sans">Trades/Min</div>
+                        <div id="kpi-trades-min" class="text-xl font-bold font-mono">--</div>
                     </div>
                 </div>
             </div>
@@ -188,9 +196,10 @@
             <div>
                 <h2 class="text-xs uppercase tracking-widest text-gray-500 font-bold mb-3">Last Signal</h2>
                 <div id="last-signal-card"
-                    class="bg-void-800 border border-void-600 border-l-2 border-l-void-500 rounded-md p-3">
-                    <div class="text-xs text-gray-400 mb-1">Signal Strength</div>
-                    <div id="kpi-last-signal" class="text-lg font-semibold font-mono">--</div>
+                    class="bg-void-800 border border-void-600 rounded-md p-3 relative overflow-hidden">
+                    <div class="absolute left-0 top-0 bottom-0 w-0.5 bg-gradient-to-b from-neon-cyan to-purple-500"></div>
+                    <div class="text-xs text-gray-400 mb-1 font-sans">Signal Strength</div>
+                    <div id="kpi-last-signal" class="text-xl font-bold font-mono">--</div>
                 </div>
             </div>
 
@@ -241,10 +250,11 @@
             <div class="mt-auto">
                 <h2 class="text-xs uppercase tracking-widest text-gray-500 font-bold mb-3">System</h2>
                 <div
-                    class="bg-void-800 border border-void-600 rounded-md p-3 text-xs text-gray-500 font-mono space-y-1">
-                    <div>Total Candles: <span id="debug-candles" class="text-gray-300">0</span></div>
-                    <div>Timeframe: <span id="debug-timeframe" class="text-neon-cyan">3 min</span></div>
-                    <div>Last Update: <span id="debug-last-update" class="text-gray-300">--</span></div>
+                    class="bg-void-800 border border-void-600 rounded-md p-3 text-xs text-gray-500 space-y-1 relative overflow-hidden">
+                    <div class="absolute left-0 top-0 bottom-0 w-0.5 bg-gradient-to-b from-neon-cyan to-purple-500"></div>
+                    <div class="font-sans">Total Candles: <span id="debug-candles" class="text-gray-300 font-mono font-bold">0</span></div>
+                    <div class="font-sans">Timeframe: <span id="debug-timeframe" class="text-neon-cyan font-mono font-bold">3 min</span></div>
+                    <div class="font-sans">Last Update: <span id="debug-last-update" class="text-gray-300 font-mono font-bold">--</span></div>
                 </div>
             </div>
         </aside>
