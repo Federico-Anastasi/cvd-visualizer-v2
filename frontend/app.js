@@ -71,8 +71,7 @@ const State = {
 
     metrics: {
         updateCount: 0,
-        lastUpdateTime: null,
-        dataPoints: 0
+        lastUpdateTime: null
     },
 
     elements: null
@@ -91,11 +90,10 @@ function cacheDOMElements() {
         kpiCvdNet: document.getElementById('kpi-cvd-net'),
         kpiLastSignal: document.getElementById('kpi-last-signal'),
         kpiUptime: document.getElementById('kpi-uptime'),
-        kpiLatency: document.getElementById('kpi-latency'),
         lastSignalCard: document.getElementById('last-signal-card'),
         loadingOverlay: document.getElementById('loading-overlay'),
-        debugUpdates: document.getElementById('debug-updates'),
-        debugPoints: document.getElementById('debug-points'),
+        debugCandles: document.getElementById('debug-candles'),
+        debugTimeframe: document.getElementById('debug-timeframe'),
         debugLastUpdate: document.getElementById('debug-last-update'),
         chartContainer: document.getElementById('main-chart'),
         resetViewBtn: document.getElementById('reset-view')
@@ -682,8 +680,12 @@ function updateKPIs(data) {
 }
 
 function updateDebugInfo() {
-    State.elements.debugUpdates.textContent = State.metrics.updateCount;
-    State.elements.debugPoints.textContent = State.metrics.dataPoints;
+    // Update total candles count from raw data
+    if (State.rawData && State.rawData.price_ohlc && State.rawData.price_ohlc.index) {
+        State.elements.debugCandles.textContent = State.rawData.price_ohlc.index.length;
+    }
+
+    // Update last update time
     if (State.metrics.lastUpdateTime) {
         const diff = Math.floor((new Date() - State.metrics.lastUpdateTime) / 1000);
         State.elements.debugLastUpdate.textContent = `${diff}s ago`;
@@ -699,6 +701,8 @@ function connectEventSource() {
             const data = JSON.parse(event.data);
             State.metrics.updateCount++;
             State.metrics.lastUpdateTime = new Date();
+            // Immediately update "Last Update" to show 0s (prevents showing 0s for 2 seconds)
+            State.elements.debugLastUpdate.textContent = '0s ago';
             updateKPIs(data);
             updateChart(data);
             updateDebugInfo();
@@ -749,6 +753,14 @@ function init() {
     setupInteractions();
     setupControls();
     connectEventSource();
+
+    // Real-time "Last Update" counter (updates every second)
+    setInterval(() => {
+        if (State.metrics.lastUpdateTime) {
+            const diff = Math.floor((new Date() - State.metrics.lastUpdateTime) / 1000);
+            State.elements.debugLastUpdate.textContent = `${diff}s ago`;
+        }
+    }, 1000);
 }
 
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);

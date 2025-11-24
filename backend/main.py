@@ -17,7 +17,7 @@ from fastapi.responses import StreamingResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 
-from cvd_engine import (
+from backend.cvd_engine import (
     build_frames,
     calculate_cumulative,
     serialize_dataframe,
