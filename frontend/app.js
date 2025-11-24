@@ -560,13 +560,24 @@ function processData(data) {
             // Negative signals: position above candle high
             const yPosition = sig > 0 ? candle[2] - fixedOffset : candle[3] + fixedOffset;
 
+            // Circular badge with number inside
             processed.markers.push({
                 coord: [i, yPosition],
                 value: Math.abs(sig).toString(),
-                itemStyle: { color: sig > 0 ? CONFIG.COLORS.SIGNAL_UP : CONFIG.COLORS.SIGNAL_DOWN },
-                symbol: sig > 0 ? 'arrow' : 'arrow',
-                symbolRotate: sig > 0 ? 0 : 180,
-                symbolSize: 12
+                itemStyle: {
+                    color: sig > 0 ? CONFIG.COLORS.SIGNAL_UP : CONFIG.COLORS.SIGNAL_DOWN,
+                    borderColor: '#0b0e11',
+                    borderWidth: 2
+                },
+                label: {
+                    show: true,
+                    formatter: '{c}',
+                    color: '#000',
+                    fontWeight: 'bold',
+                    fontSize: 11
+                },
+                symbol: 'circle',
+                symbolSize: 24
             });
         }
     }
