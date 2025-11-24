@@ -238,9 +238,11 @@ function initializeChart() {
 
     State.chart.setOption(option);
 
-    // Smart Scaling on Zoom
+    // Smart Scaling on Zoom + Recalculate badge sizes
     State.chart.on('dataZoom', () => {
         handleSmartScaling();
+        // Recalculate badge sizes when zoom changes
+        updateBadgeSizes();
     });
 
     window.addEventListener('resize', () => State.chart.resize());
@@ -470,6 +472,85 @@ function setupInteractions() {
 // DATA PROCESSING
 // ────────────────────────────────────────────────────────────
 
+/**
+ * Calculate badge size based on visible candle count (zoom level)
+ * Returns size in pixels that scales with chart zoom
+ */
+function calculateBadgeSize() {
+    if (!State.chart) return 24; // Default fallback
+
+    try {
+        const option = State.chart.getOption();
+        const dataZoom = option.dataZoom?.[0];
+
+        if (!dataZoom) return 24;
+
+        // Get total number of candles
+        const totalCandles = State.rawData?.price_ohlc?.index?.length || 100;
+
+        // Calculate visible candle count based on zoom range
+        const start = dataZoom.start || 0;
+        const end = dataZoom.end || 100;
+        const visiblePercent = (end - start) / 100;
+        const visibleCandles = Math.max(5, totalCandles * visiblePercent);
+
+        // Get chart width (grid area width)
+        const chartWidth = State.chart.getWidth();
+        const gridLeft = 60; // From CONFIG.GRIDS
+        const gridRight = 60;
+        const effectiveWidth = chartWidth - gridLeft - gridRight;
+
+        // Calculate candle width in pixels
+        const candleWidth = effectiveWidth / visibleCandles;
+
+        // Badge size = 80% of candle width (to avoid overlap)
+        // Clamp between 12px (min readable) and 40px (max size)
+        const badgeSize = Math.max(12, Math.min(40, candleWidth * 0.8));
+
+        return badgeSize;
+    } catch (e) {
+        console.warn('[BADGE] Size calculation error:', e);
+        return 24; // Fallback
+    }
+}
+
+/**
+ * Update badge sizes in real-time when zoom changes
+ * More efficient than recalculating entire chart
+ */
+function updateBadgeSizes() {
+    if (!State.lastData || !State.chart) return;
+
+    try {
+        const badgeSize = calculateBadgeSize();
+        const fontSize = Math.max(9, Math.floor(badgeSize * 0.45)); // 45% of badge diameter
+
+        // Get current markers from lastData
+        const markers = State.lastData.markers;
+        if (!markers || markers.length === 0) return;
+
+        // Update markers with new size
+        const updatedMarkers = markers.map(marker => ({
+            ...marker,
+            symbolSize: badgeSize,
+            label: {
+                ...marker.label,
+                fontSize: fontSize
+            }
+        }));
+
+        // Update only the markPoint data without touching other series
+        State.chart.setOption({
+            series: [
+                { markPoint: { data: updatedMarkers } }
+            ]
+        }, false);
+
+    } catch (e) {
+        console.warn('[BADGE] Update error:', e);
+    }
+}
+
 function processData(data) {
     if (!data.price_ohlc || !data.price_ohlc.index) return null;
 
@@ -561,6 +642,10 @@ function processData(data) {
             const yPosition = sig > 0 ? candle[2] - fixedOffset : candle[3] + fixedOffset;
 
             // Circular badge with number inside
+            // Calculate initial badge size
+            const badgeSize = calculateBadgeSize();
+            const fontSize = Math.max(9, Math.floor(badgeSize * 0.45));
+
             processed.markers.push({
                 coord: [i, yPosition],
                 value: Math.abs(sig).toString(),
@@ -574,10 +659,10 @@ function processData(data) {
                     formatter: '{c}',
                     color: '#000',
                     fontWeight: 'bold',
-                    fontSize: 11
+                    fontSize: fontSize
                 },
                 symbol: 'circle',
-                symbolSize: 24
+                symbolSize: badgeSize
             });
         }
     }
