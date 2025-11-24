@@ -17,7 +17,7 @@ from fastapi.responses import StreamingResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 
-from backend.cvd_engine import (
+from cvd_engine import (
     build_frames,
     calculate_cumulative,
     serialize_dataframe,
@@ -42,6 +42,7 @@ CLEANUP_INTERVAL = 120  # Cleanup every 120 updates (10 minutes)
 # Global state
 trades = []
 trades_lock = threading.Lock()
+ws_connected_time = None  # Track when WebSocket connected
 data_snapshot = {
     "timestamp": None,
     "price_ohlc": None,
@@ -83,18 +84,26 @@ async def on_message(msg):
     data = json.loads(msg)["data"]
     if isinstance(data, list):
         with trades_lock:
-            trades.extend({
-                "ts": pd.to_datetime(t["time"], unit="ms"),
-                "price": float(t["px"]),
-                "vol": float(t["sz"]),
-                "side": t["side"]
-            } for t in data)
+            new_trades = []
+            for t in data:
+                new_trades.append({
+                    "ts": pd.to_datetime(t["time"], unit="ms"),
+                    "price": float(t["px"]),
+                    "vol": float(t["sz"]),
+                    "side": t["side"]
+                })
+            if new_trades:
+                trades.extend(new_trades)
+                print(f"[WS] Added {len(new_trades)} trades", flush=True)
 
 
 async def websocket_loop():
     """Main WebSocket loop - connects to Hyperliquid and receives trades"""
+    global ws_connected_time
+
     while True:
         try:
+            ws_connected_time = None  # Reset on each connection
             async with websockets.connect(WS_URL) as ws:
                 await ws.send(json.dumps({
                     "method": "subscribe",
@@ -105,6 +114,7 @@ async def websocket_loop():
                     await on_message(await ws.recv())
         except Exception as e:
             print(f"[WS] Error: {e}, reconnecting in 5s...", flush=True)
+            ws_connected_time = None
             await asyncio.sleep(5)
 
 
@@ -244,7 +254,7 @@ async def health_check():
 @app.get("/")
 async def serve_frontend():
     """Serve frontend HTML"""
-    return FileResponse("frontend/index.html")
+    return FileResponse(os.path.join(frontend_dir, "index.html"))
 
 
 # ═══════════════════════════════════════════════════════════
@@ -273,4 +283,6 @@ async def shutdown_event():
 
 
 # Mount static files (CSS, JS)
-app.mount("/static", StaticFiles(directory="frontend"), name="static")
+import os
+frontend_dir = os.path.join(os.path.dirname(__file__), "..", "frontend")
+app.mount("/static", StaticFiles(directory=frontend_dir), name="static")

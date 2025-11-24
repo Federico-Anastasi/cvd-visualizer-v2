@@ -1,153 +1,307 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CVD Visualizer - Real-time Bitcoin Order Flow</title>
+    <title>CVD Pro Terminal</title>
 
-    <!-- Plotly.js -->
-    <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
 
-    <!-- Styles -->
-    <link rel="stylesheet" href="/static/styles.css">
-
-    <!-- Google Analytics (replace G-XXXXXXXXXX with your tracking ID) -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
+    <!-- Tailwind Custom Configuration -->
     <script>
-        window.dataLayer = window.dataLayer || [];
-        function gtag(){dataLayer.push(arguments);}
-        gtag('js', new Date());
-        gtag('config', 'G-XXXXXXXXXX');
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'void': {
+                            900: '#0b0e11',
+                            800: '#15191e',
+                            700: '#1e232b',
+                            600: '#2a2e39',
+                            500: '#454d5f',
+                        },
+                        'neon': {
+                            cyan: '#00f0ff',
+                            red: '#ff0055',
+                            amber: '#ffcc00',
+                        }
+                    },
+                    fontFamily: {
+                        'sans': ['Inter', 'system-ui', 'sans-serif'],
+                        'mono': ['JetBrains Mono', 'monospace'],
+                    }
+                }
+            }
+        }
     </script>
-</head>
-<body>
-    <div class="container">
-        <!-- Sidebar -->
-        <aside id="sidebar">
-            <h1>📊 CVD Visualizer</h1>
-            <p class="subtitle">Real-time Bitcoin Order Flow</p>
 
-            <!-- Session Status -->
-            <div id="session-status" class="status-box">
-                <div class="status-indicator">
-                    <span class="dot" id="status-dot"></span>
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap"
+        rel="stylesheet">
+
+    <!-- Apache ECharts -->
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+
+    <style>
+        /* Custom animations */
+        @keyframes pulse-glow {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.5;
+            }
+        }
+
+        .animate-pulse-glow {
+            animation: pulse-glow 2s infinite;
+        }
+
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #0b0e11;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #454d5f;
+            border-radius: 3px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #8b93a0;
+        }
+
+        /* Ensure chart container fills properly */
+        #main-chart {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+        }
+
+        #main-chart canvas {
+            display: block;
+        }
+
+        /* Custom range slider styling */
+        input[type="range"] {
+            -webkit-appearance: none;
+            appearance: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: currentColor;
+            cursor: pointer;
+        }
+
+        input[type="range"]::-moz-range-thumb {
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: currentColor;
+            cursor: pointer;
+            border: none;
+        }
+    </style>
+</head>
+
+<body class="bg-void-900 text-gray-100 font-sans antialiased overflow-hidden">
+
+    <!-- Main Grid Layout -->
+    <div class="h-screen w-screen grid grid-rows-[48px_1fr_32px] grid-cols-[260px_1fr]">
+
+        <!-- ════════════════ HEADER ════════════════ -->
+        <header class="col-span-2 bg-void-800 border-b border-void-600 flex items-center justify-between px-4">
+            <!-- Brand -->
+            <div class="flex items-center gap-3">
+                <h1 class="text-base font-semibold tracking-wider uppercase">CVD Pro Terminal</h1>
+                <span
+                    class="bg-neon-cyan/10 text-neon-cyan border border-neon-cyan/20 px-2 py-0.5 rounded text-xs font-bold">
+                    BTC-PERP
+                </span>
+            </div>
+
+            <!-- Controls -->
+            <div class="flex items-center gap-4">
+                <!-- Status Indicator -->
+                <div class="flex items-center gap-2 text-xs text-gray-400">
+                    <span id="status-dot" class="w-1.5 h-1.5 rounded-full bg-gray-500"></span>
                     <span id="status-text">Connecting...</span>
                 </div>
+                <!-- Screenshot Button -->
+                <button id="screenshot"
+                    class="bg-void-800 hover:bg-void-700 border border-void-600 hover:border-gray-500 text-gray-400 hover:text-gray-200 px-3 py-1.5 rounded text-sm transition-all"
+                    title="Take Screenshot">
+                    📸
+                </button>
+            </div>
+        </header>
+
+        <!-- ════════════════ SIDEBAR ════════════════ -->
+        <aside class="bg-void-900 border-r border-void-600 flex flex-col gap-6 p-4 overflow-y-auto">
+
+            <!-- Market Data KPIs -->
+            <div>
+                <h2 class="text-xs uppercase tracking-widest text-gray-500 font-bold mb-3">Market Data</h2>
+                <div class="grid gap-3">
+                    <!-- 24h Volume -->
+                    <div class="bg-void-800 border border-void-600 border-l-2 border-l-void-500 rounded-md p-3">
+                        <div class="text-xs text-gray-400 mb-1">24h Volume</div>
+                        <div class="text-lg font-semibold font-mono text-gray-100">
+                            <span id="kpi-volume">--</span>
+                            <span class="text-xs text-gray-500 ml-1">BTC</span>
+                        </div>
+                    </div>
+
+                    <!-- CVD Net -->
+                    <div class="bg-void-800 border border-void-600 border-l-2 border-l-void-500 rounded-md p-3">
+                        <div class="text-xs text-gray-400 mb-1">CVD Net</div>
+                        <div id="kpi-cvd-net" class="text-lg font-semibold font-mono">--</div>
+                    </div>
+
+                    <!-- Trades/Min -->
+                    <div class="bg-void-800 border border-void-600 border-l-2 border-l-void-500 rounded-md p-3">
+                        <div class="text-xs text-gray-400 mb-1">Trades/Min</div>
+                        <div id="kpi-trades-min" class="text-lg font-semibold font-mono">--</div>
+                    </div>
+                </div>
             </div>
 
-            <hr>
-
-            <!-- KPI Section -->
-            <div class="kpi-section">
-                <h2>📈 Metrics</h2>
-
-                <div class="kpi-item">
-                    <span class="kpi-label">Volume 24h</span>
-                    <span class="kpi-value" id="kpi-volume">-</span>
-                    <span class="kpi-unit">BTC</span>
-                </div>
-
-                <div class="kpi-item">
-                    <span class="kpi-label">Trades/min</span>
-                    <span class="kpi-value" id="kpi-trades-min">-</span>
-                </div>
-
-                <div class="kpi-item">
-                    <span class="kpi-label">CVD Net</span>
-                    <span class="kpi-value" id="kpi-cvd-net">-</span>
-                </div>
-
-                <div class="kpi-item">
-                    <span class="kpi-label">Last Signal</span>
-                    <span class="kpi-value signal-badge" id="kpi-last-signal">-</span>
-                </div>
-
-                <div class="kpi-item">
-                    <span class="kpi-label">Uptime</span>
-                    <span class="kpi-value" id="kpi-uptime">-</span>
+            <!-- Last Signal -->
+            <div>
+                <h2 class="text-xs uppercase tracking-widest text-gray-500 font-bold mb-3">Last Signal</h2>
+                <div id="last-signal-card"
+                    class="bg-void-800 border border-void-600 border-l-2 border-l-void-500 rounded-md p-3">
+                    <div class="text-xs text-gray-400 mb-1">Signal Strength</div>
+                    <div id="kpi-last-signal" class="text-lg font-semibold font-mono">--</div>
                 </div>
             </div>
 
-            <hr>
+            <!-- Controls -->
+            <div>
+                <h2 class="text-xs uppercase tracking-widest text-gray-500 font-bold mb-3">Controls</h2>
+                <div class="flex flex-col gap-3">
+                    <button id="reset-view"
+                        class="w-full bg-void-800 hover:bg-void-700 border border-void-600 hover:border-gray-500 text-gray-400 hover:text-gray-200 py-2 rounded text-sm transition-all">
+                        Reset View (Double Click Axis)
+                    </button>
+                </div>
+            </div>
 
             <!-- Signal Legend -->
-            <div class="legend-section">
-                <h2>📖 Signal Legend</h2>
-
-                <div class="legend-item">
-                    <span class="badge badge-strong-bull">+3</span>
-                    <span class="legend-text">Strong bullish move</span>
+            <div>
+                <h2 class="text-xs uppercase tracking-widest text-gray-500 font-bold mb-3">Signal Legend</h2>
+                <div class="bg-void-800 border border-void-600 rounded-md p-3 text-xs font-mono space-y-1.5">
+                    <div class="flex justify-between items-center">
+                        <span class="text-neon-cyan font-bold">+3</span>
+                        <span class="text-gray-400">Strong Bull</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-neon-cyan font-bold">+2</span>
+                        <span class="text-gray-400">Bull Div</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-neon-cyan font-bold">+1</span>
+                        <span class="text-gray-400">Absorption</span>
+                    </div>
+                    <div class="border-t border-void-600 my-1"></div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-neon-red font-bold">-1</span>
+                        <span class="text-gray-400">Absorption</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-neon-red font-bold">-2</span>
+                        <span class="text-gray-400">Bear Div</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-neon-red font-bold">-3</span>
+                        <span class="text-gray-400">Strong Bear</span>
+                    </div>
                 </div>
-
-                <div class="legend-item">
-                    <span class="badge badge-divergence-bull">+2</span>
-                    <span class="legend-text">Divergence (reversal)</span>
-                </div>
-
-                <div class="legend-item">
-                    <span class="badge badge-absorption-bull">+1</span>
-                    <span class="legend-text">Absorption (ranging)</span>
-                </div>
-
-                <div class="legend-item">
-                    <span class="badge badge-neutral">0</span>
-                    <span class="legend-text">Neutral</span>
-                </div>
-
-                <div class="legend-item">
-                    <span class="badge badge-absorption-bear">-1</span>
-                    <span class="legend-text">Absorption (ranging)</span>
-                </div>
-
-                <div class="legend-item">
-                    <span class="badge badge-divergence-bear">-2</span>
-                    <span class="legend-text">Divergence (reversal)</span>
-                </div>
-
-                <div class="legend-item">
-                    <span class="badge badge-strong-bear">-3</span>
-                    <span class="legend-text">Strong bearish move</span>
-                </div>
-
-                <p class="legend-note">
-                    <strong>Cumulative Signal:</strong> Sum of signals over time.
-                    Extreme values (>+4 or <-4) indicate potential reversals.
-                </p>
             </div>
 
-            <hr>
-
-            <!-- Info -->
-            <div class="info-section">
-                <p class="info-text">
-                    Live data from <strong>Hyperliquid</strong><br>
-                    BTC perpetual futures<br>
-                    Updates every 5 seconds
-                </p>
-                <p class="info-hint">
-                    💡 Drag to pan, scroll to zoom<br>
-                    Double-click to reset view
-                </p>
+            <!-- Debug Info -->
+            <div class="mt-auto">
+                <h2 class="text-xs uppercase tracking-widest text-gray-500 font-bold mb-3">Debug</h2>
+                <div
+                    class="bg-void-800 border border-void-600 rounded-md p-3 text-xs text-gray-500 font-mono space-y-1">
+                    <div>Updates: <span id="debug-updates" class="text-gray-300">0</span></div>
+                    <div>Data Points: <span id="debug-points" class="text-gray-300">0</span></div>
+                    <div>Last Update: <span id="debug-last-update" class="text-gray-300">--</span></div>
+                </div>
             </div>
         </aside>
 
-        <!-- Main Chart Area -->
-        <main>
-            <div id="chart-container">
-                <div id="chart"></div>
+        <!-- ════════════════ MAIN CONTENT (SINGLE ECHARTS INSTANCE) ════════════════ -->
+        <main class="bg-void-900 overflow-hidden relative">
+            <!-- Loading Overlay -->
+            <div id="loading-overlay"
+                class="absolute inset-0 bg-void-900/90 backdrop-blur-sm flex items-center justify-center z-50 hidden">
+                <div class="text-center">
+                    <div
+                        class="w-12 h-12 border-4 border-void-600 border-t-neon-cyan rounded-full animate-spin mx-auto mb-3">
+                    </div>
+                    <div class="text-sm text-gray-400">Loading data...</div>
+                </div>
             </div>
+
+            <!-- Single ECharts Container (All grids in one) -->
+            <div id="main-chart"></div>
         </main>
+
+        <!-- ════════════════ FOOTER ════════════════ -->
+        <footer
+            class="col-span-2 bg-void-800 border-t border-void-600 flex items-center justify-between px-4 text-xs text-gray-500">
+            <!-- Stats -->
+            <div class="flex gap-4">
+                <div>Uptime: <span id="kpi-uptime" class="text-gray-400">--</span></div>
+                <div>Latency: <span id="kpi-latency" class="text-gray-400">-- ms</span></div>
+            </div>
+
+            <!-- Links -->
+            <div class="flex items-center gap-4">
+                <span>Powered by Hyperliquid + Apache ECharts</span>
+                <span class="text-void-500">|</span>
+                <a href="https://twitter.com/FedeAnastasi" target="_blank"
+                    class="text-gray-500 hover:text-gray-300 transition-colors flex items-center gap-1">
+                    <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
+                        <path
+                            d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+                    </svg>
+                    @FedeAnastasi
+                </a>
+                <a href="https://github.com/Federico-Anastasi" target="_blank"
+                    class="text-gray-500 hover:text-gray-300 transition-colors flex items-center gap-1">
+                    <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
+                        <path
+                            d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z" />
+                    </svg>
+                    GitHub
+                </a>
+            </div>
+        </footer>
+
     </div>
 
-    <!-- Footer -->
-    <footer>
-        <p>
-            Built by <a href="https://twitter.com/FedeAnastasi" target="_blank">@FedeAnastasi</a>
-            | <a href="https://github.com/Federico-Anastasi/cvd-visualizer-v2" target="_blank">GitHub</a>
-        </p>
-    </footer>
-
-    <!-- App Logic -->
-    <script src="/static/app.js"></script>
+    <!-- App Logic (ECharts Version) -->
+    <script src="/static/app.js?v=6"></script>
 </body>
+
 </html>

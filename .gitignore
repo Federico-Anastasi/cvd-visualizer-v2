@@ -1,6 +1,8 @@
 # Data files
 data/
 output/
+screen/
+.claude/
 *.png
 
 # Python
